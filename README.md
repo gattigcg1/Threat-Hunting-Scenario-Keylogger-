@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/cb68615f-5521-4b89-a3a3-aadbf1b00a2e)
+![image](https://github.com/user-attachments/assets/cda9bbe7-c6af-445c-a0cf-a36a1c716ed3)
 
 # Threat-Hunting-Scenario-Keylogger
 
