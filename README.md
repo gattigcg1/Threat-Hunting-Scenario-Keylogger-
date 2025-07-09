@@ -14,35 +14,21 @@
 
 ## Steps Taken
 
-This is a newly commissioned VM that the manager set up for someone on his team. I suspected that he might have installed some script on the machine that might be allowing him to spy on employees. Looked at 
+This is a newly commissioned VM that the manager set up for someone on his team. I suspected that he might have installed some script on the machine that might be allowing him to spy on employees.
 
 I used a query that searches for “FileCreated” Action type using the query below:
 
 ```kql
 DeviceFileEvents
-| where DeviceName contains "VM_HOST_NAME"
+| where DeviceName contains "win-vm-gcg-321"
+| order by Timestamp desc 
 | where ActionType == "FileCreated"
+| project Timestamp, ActionType, FileName, FolderPath
 ```
 
-![image](https://github.com/user-attachments/assets/1f0bab05-024a-4ce3-9ae5-49161234803a)
+![image](https://github.com/user-attachments/assets/9962ada3-bca0-4575-9c6f-525967a61598)
 
-Looking at the data above, a suspicious looking file called “super_secret_script.sh” was created on 2025-06-16T12:20:50.902852Z. There are two rows that have this filename, after investigating the contents we find the differences as follows:
-
-![image](https://github.com/user-attachments/assets/93aaed82-dc30-46ae-ba9b-3d41baac883a)
-
-Touch is a linux command that creates the super_secret_script.sh while nano command opens said file in the nano text editor in Linux. 
-
-This is the first most interesting thing, but let's also look in this table and see if there’s anything else interesting. 
-
-DeviceFileEvents
-| where DeviceName contains "VM_HOST_NAME"
-| where ActionType == "FileCreated"
-| project Timestamp, DeviceName, InitiatingProcessCommandLine, InitiatingProcessParentFileName
-| order by Timestamp asc
-
-![image](https://github.com/user-attachments/assets/3453d6d7-d3a0-4ce7-be86-0e7ac6ffb3f1)
-
-InitialProcessCommandLine gives us more insight into what effects could be had on the VM. After the command “nano super_secret_script.sh”, we see one more interesting row. “usermod -aG sudo john_smith” which is very suspicious as it gives the user John Smith sudo privileges, which is a backdoor into the system. The door is closing in! 
+Looking at the data above, a suspicious looking file called “mykeylogger01.exe” was created on 2025-07-09T12:48:48.8194035Z. It looks like it's nested in this directory: 'C:\Users\gattigcg1\Downloads\Key-Logger-With-Email-master\Key-Logger-With-Email-master\mykeylogger01\obj\Debug\mykeylogger01.exe'. The fact that this an exe file shows that it's a Windows executable file and obj\Debug indicates that this is most likely a C# source file as this is a common folder structure for compiled output in Microsoft Visual Studio projects. 
 
 ---
 
