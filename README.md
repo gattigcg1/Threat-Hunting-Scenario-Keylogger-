@@ -34,7 +34,7 @@ Looking at the data above, a suspicious looking file called “mykeylogger01.exe
 
 ### 2. Looked into the C:\data\ directory and searched the `DeviceNetworkEvents` Table
 
-I investigated several tables trying to find some kind of text file or excel file that was created for the purpose of logging the data. However, this proved hard to find. Perhaps the creation of this logging process file has not been detected by MDE or its in a format that is hard to find. This lead to me investigating the interesting directory called C:\data. 
+I investigated several tables trying to find some kind of text file or excel file that was created for the purpose of logging the data. However, this proved hard to find. Perhaps the creation of this logging process file has not been detected by MDE or its in a format that is hard to find. This lead to me investigating the interesting directory: C:\data that was mentioned in the DeviceFileEvents table. 
 
 ![image](https://github.com/user-attachments/assets/9f37c1dc-2a86-40cc-af97-b517d9a2f12b)
 
