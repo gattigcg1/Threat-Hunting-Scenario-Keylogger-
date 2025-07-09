@@ -14,6 +14,8 @@
 
 ## Steps Taken
 
+### 1. Searched the `DeviceFileEvents` Table
+
 This is a newly commissioned VM that the manager set up for someone on his team. I suspected that he might have installed some script on the machine that might be allowing him to spy on employees.
 
 I used a query that searches for “FileCreated” Action type using the query below:
