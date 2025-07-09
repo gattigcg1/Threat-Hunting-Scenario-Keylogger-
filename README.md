@@ -54,6 +54,21 @@ Two emails were sent with the account name 'amy', and two emails were sent with 
 
 What needed investigating was how the script was able to run on Amy's account upon start up/login. Having understanding of the Windows Registry, it would seem like it would be natural that it would be some kind of Task that has been scheduled to run upon login. The manager has not offered access to his account, so we decided to look into MDE and see if we can track the exact time he created the Task. 
 
+Using this query:
+
+```kql
+DeviceEvents
+| where DeviceName contains "win-vm-gcg-321"
+| where ActionType == "ScheduledTaskCreated"
+| order by Timestamp desc
+```
+
+The ScheduleTaskCreated field allows us to see all the tasks that were created. Looking through the records we see a task that mentions 'mykeylogger01.exe' at 2025-07-06T17:06:23.9316582Z. 
+
+![image](https://github.com/user-attachments/assets/c12dabc4-0492-4d71-b0b5-1fd1c6cc5e0e)
+
+Looking at AdditionalFields we get some information about the task that was created by user 'gattigcg1'. While it's not visible in the image, the task action is: Exec\":{\"Command\":\"C:\\\\data\\\\mykeylogger01.exe\" - which clearly shows that its execution of the keylogger script.
+
 ---
 
 ## Summary
