@@ -28,7 +28,7 @@ DeviceFileEvents
 
 ![image](https://github.com/user-attachments/assets/9962ada3-bca0-4575-9c6f-525967a61598)
 
-Looking at the data above, a suspicious looking file called “mykeylogger01.exe” was created on 2025-07-09T12:48:48.8194035Z. It looks like it's nested in this directory: 'C:\Users\gattigcg1\Downloads\Key-Logger-With-Email-master\Key-Logger-With-Email-master\mykeylogger01\obj\Debug\mykeylogger01.exe'. The fact that this an exe file shows that it's a Windows executable file and obj\Debug indicates that this is most likely a C# source file as this is a common folder structure for compiled output in Microsoft Visual Studio projects. 
+Looking at the data above, a suspicious looking file called “mykeylogger01.exe” was created on 2025-07-09T12:48:48.8194035Z. It looks like it's nested in this directory: 'C:\Users\gattigcg1\Downloads\Key-Logger-With-Email-master\Key-Logger-With-Email-master\mykeylogger01\obj\Debug\mykeylogger01.exe'. The fact that this an exe file shows that it's a Windows executable file and obj\Debug indicates that this is most likely a C# source file as this is a common folder structure for compiled output in Microsoft Visual Studio projects. Another FileCreated ActionType showed path C:\data\mykeylogger01.exe, which indicates that the file was perhaps copied to this mysterious data folder. 
 
 ---
 
