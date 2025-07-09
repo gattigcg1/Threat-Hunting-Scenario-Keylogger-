@@ -50,6 +50,10 @@ The RemoteUrl field is 'smtp.gmail.com' which caught my interest. Looking at the
 
 Two emails were sent with the account name 'amy', and two emails were sent with the user 'gattigcg1' which is the manager's account. It seems like the manager was testing the email functionality of the script right before giving the computer to the employee. 
 
+### 3. Looked into Registry table
+
+What needed investigating was how the script was able to run on Amy's account upon start up/login. Having understanding of the Windows Registry, it would seem like it would be natural that it would be some kind of Task that has been scheduled to run upon login. The manager has not offered access to his account, so we decided to look into MDE and see if we can track the exact time he created the Task. 
+
 ---
 
 ## Summary
