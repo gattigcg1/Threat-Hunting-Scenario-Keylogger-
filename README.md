@@ -2,7 +2,7 @@
 
 # Threat-Hunting-Scenario-Keylogger
 
-**Scenario**: A new manager has been hired by Company A named Joe. Joe is a very strict manager that often messages his employees at various times in the day when he feels they might be slacking off. He often makes comments like “Stop goofing off!” even though the employees work remotely. Suspicion has been growing around the office that Joe might somehow be monitoring his employees activities in some fashion. You are tasked with investigating one of the workstations of a member of Joe’s team and seeing if anything unusual is afoot. Company A has been noticing some PII information about employees might be getting leaked because of recent phishing attempts that have been perpetrated. Such information includes address, email address, and phone number. All of this information is stored on a linux server as a hidden file where only the root/sudo users have read and write access. There was a report by another employee the other day of a fellow employee messing with the computer while the root administrator was in the bathroom. The company has decided to investigate this.
+**Scenario**: A new manager has been hired by Company A named Joe. Joe is a very strict manager that often messages his employees at various times in the day when he feels they might be slacking off. He often makes comments like “Stop goofing off!” even though the employees work remotely. Suspicion has been growing around the office that Joe might somehow be monitoring his employees activities in some fashion. You are tasked with investigating one of the workstations of a member of Joe’s team and seeing if anything unusual is afoot. 
 
 ## Platforms and Languages Leveraged
 - Windows 10
