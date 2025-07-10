@@ -63,7 +63,7 @@ DeviceEvents
 | order by Timestamp desc
 ```
 
-The ScheduleTaskCreated field allows us to see all the tasks that were created. Looking through the records we see a task that mentions 'mykeylogger01.exe' at 2025-07-06T17:06:23.9316582Z. 
+The field ActionType being ScheduleTaskCreated allows us to see all the tasks that were created. Looking through the records we see a task that mentions 'mykeylogger01.exe' at 2025-07-06T17:06:23.9316582Z. 
 
 ![image](https://github.com/user-attachments/assets/c12dabc4-0492-4d71-b0b5-1fd1c6cc5e0e)
 
